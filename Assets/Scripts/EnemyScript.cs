@@ -5,10 +5,16 @@ using UnityEngine;
 public class EnemyScript : MonoBehaviour
 {
     #region Variables
+
+    [Header("Animations")]
+    public Animator animator;
+    public string stateParameters = "State";
+
     public enum enemyStates { WalkingL, WalkingR, Idle };
 
     [Header("States")]
     public enemyStates state;
+    private enemyStates cashedState;
 
     [Header("Walk")]
     public float walkingTime = 1f;
@@ -22,6 +28,8 @@ public class EnemyScript : MonoBehaviour
 
     private CharacterController controller;
     #endregion 
+
+    
     void Start()
     {
         controller = GetComponent<CharacterController>();
@@ -47,6 +55,7 @@ public class EnemyScript : MonoBehaviour
                 Idle();
                 break;
         }
+        UpdateAnimation();
         
     }
     void WalkingL()
@@ -59,6 +68,7 @@ public class EnemyScript : MonoBehaviour
             state = enemyStates.WalkingR;
             walkedTime = 0;
         }
+        cashedState = state;
     }
     void WalkingR()
     {
@@ -70,6 +80,7 @@ public class EnemyScript : MonoBehaviour
             state = enemyStates.WalkingL;
             walkedTime = 0;
         }
+        cashedState = state;
     }
     void Idle()
     {
@@ -83,10 +94,19 @@ public class EnemyScript : MonoBehaviour
         {
             if(hit.transform == this.transform)
             {
+                if (state != enemyStates.Idle)
+                {
+                    cashedState = state;
+                }
                 state = enemyStates.Idle;
                 return;
             }
         }
-        state = enemyStates.WalkingR;
+        state = cashedState;
+        
+    }
+    void UpdateAnimation()
+    {
+        animator.SetInteger(stateParameters, (int)state);
     }
 }
