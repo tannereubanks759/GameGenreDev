@@ -10,7 +10,7 @@ public class EnemyScript : MonoBehaviour
     public Animator animator;
     public string stateParameters = "State";
 
-    public enum enemyStates { WalkingL, WalkingR, Idle };
+    public enum enemyStates { WalkingL, WalkingR, Idle, Combat};
 
     [Header("States")]
     public enemyStates state;
@@ -25,14 +25,30 @@ public class EnemyScript : MonoBehaviour
 
     [Header("Idle")]
 
-
     private CharacterController controller;
+
+    [Header("combat")]
+
+    public float range = 1f;
+
+    public ParticleSystem sparks;
+
+    private bool inRange = false;
+
+    private Transform target = null;
+
     #endregion 
 
     
     void Start()
     {
         controller = GetComponent<CharacterController>();
+        GameObject temp;
+        temp = GameObject.FindGameObjectWithTag("Player");
+        if (temp != null){
+            target = temp.transform;
+        }
+        
         //if (TryGetComponent<CharacterController>(out controller))
         //{
         //    controller.radius = 2f;
@@ -42,6 +58,11 @@ public class EnemyScript : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        CheckRange();
+        if (!inRange)
+        {
+            Freeze();
+        }
         Freeze();
         switch (state)
         {
@@ -54,12 +75,22 @@ public class EnemyScript : MonoBehaviour
             case enemyStates.Idle:
                 Idle();
                 break;
+            case enemyStates.Combat:
+                Combat();
+                break;
         }
         UpdateAnimation();
         
     }
     void WalkingL()
     {
+        if (inRange)
+        {
+            state = enemyStates.Combat;
+            walkedTime = 0;
+            return;
+        }
+
         walkedTime += Time.deltaTime;
 
         controller.Move(Vector3.left * speed * Time.deltaTime);
@@ -72,6 +103,13 @@ public class EnemyScript : MonoBehaviour
     }
     void WalkingR()
     {
+        if (inRange)
+        {
+            state = enemyStates.Combat;
+            walkedTime = 0;
+            return;
+        }
+
         walkedTime += Time.deltaTime;
 
         controller.Move(Vector3.right * speed * Time.deltaTime);
@@ -84,6 +122,20 @@ public class EnemyScript : MonoBehaviour
     }
     void Idle()
     {
+        if (inRange)
+        {
+            state = enemyStates.Combat;
+            walkedTime = 0;
+            return;
+        }
+    }
+    void Combat()
+    {
+        if (!inRange)
+        {
+            state = cashedState;
+            return;
+        }
 
     }
     void Freeze()
@@ -105,8 +157,31 @@ public class EnemyScript : MonoBehaviour
         state = cashedState;
         
     }
+    void CheckRange()
+    {
+        if(target == null)
+        {
+            inRange = false;
+            return;
+        }
+        if((target.position - this.transform.position).magnitude <= range)
+        {
+            inRange = true;
+        }
+
+        inRange = ((target.position - this.transform.position).magnitude <= range);
+
+    }
     void UpdateAnimation()
     {
         animator.SetInteger(stateParameters, (int)state);
+    }
+    void PlaySparks()
+    {
+        Debug.Log("spark");
+        if(sparks != null)
+        {
+            sparks.Play();
+        }
     }
 }
